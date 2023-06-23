@@ -1,0 +1,105 @@
+.App {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f2f2f2;
+    /*앱 외부 배경*/
+}
+
+.Box {
+    width: 50%;
+    height: 80%;
+    border: 2px solid #333;
+    /*앱 테두리 배경*/
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    /*앱 외부 배경*/
+}
+
+/* 화면이 800px 이하일 때 */
+@media screen and (max-width: 800px) {
+    .Box {
+        width: 70%;
+        height: 70%;
+    }
+}
+
+/* 화면이 600px 이하일 때 */
+@media screen and (max-width: 600px) {
+    .Box {
+        width: 90%;
+        height: 60%;
+    }
+}
+
+/* 화면이 400px 이하일 때 */
+@media screen and (max-width: 400px) {
+    .Box {
+        width: 100%;
+        height: 50%;
+    }
+}
+
+.ChatBox {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    height: 88%;
+    width: 94%;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    background-color: #f9f9f9;
+    padding: 10px;
+}
+
+.Chat {
+    align-items: center;
+    border: 2px solid #999;
+    border-radius: 10px;
+    background-color: #fff;
+    display: flex;
+    width: 100%;
+    margin: 5px;
+}
+
+.ChatName {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.ChatLog {
+    flex-grow: 1;
+    margin-left: 20px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.InputBox {
+    display: flex;
+    height: 5%;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.InputText {
+    width: 50%;
+    border-radius: 20px;
+    margin: 5px;
+    padding: 10px;
+    border: none;
+    outline: none;
+}
+
+.InputName {
+    width: 20%;
+    border-radius: 20px;
+    margin: 5px;
+    padding: 10px;
+    border: none;
+    outline: none;
+}
