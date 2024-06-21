@@ -40,6 +40,7 @@ io.on('connection', (socket) => {
                 return;
             }
             console.log(`${filename} 파일 저장 완료`);
+
             const fileUrl = `/download/${filename}`;
             io.emit('file', { nickname, filename, filesize, filetype, data: fileUrl }); // 모든 클라이언트에게 파일 링크 전송
         });
