@@ -1,182 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실시간 채팅 앱</title>
-    <style>
-        #messages {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
-        .chat-message {
-            margin-bottom: 10px;
-        }
-        .chat-message img, .chat-message video {
-            max-width: 100%; /* 이미지와 비디오의 최대 너비 설정 */
-            height: auto; /* 비율 유지 */
-        }
-    </style>
-</head>
-<body>
-<div id="chatbox">
-    <div id="messages"></div>
-    <input type="text" id="nickname" placeholder="닉네임">
-    <input type="text" id="message" placeholder="메시지 입력">
-    <input type="file" id="fileInput">
-    <button onclick="sendMessage()">전송</button>
-    <button onclick="sendFile()">파일 전송</button>
-</div>
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
-<script>
-    const socket = io();
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
-    function sendMessage() {
-        const nickname = document.getElementById('nickname').value;
-        const message = document.getElementById('message').value;
-        if (nickname && message) {
-            socket.emit('chat message', { nickname, message });
-            document.getElementById('message').value = '';
-        }
-    }
+const PORT = process.env.PORT || 3000;
 
-    function sendFile() {
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function () {
-                const nickname = document.getElementById('nickname').value;
-                const filename = file.name;
-                const filesize = file.size;
-                const filetype = file.type;
-                socket.emit('file', { nickname, filename, filesize, filetype, data: reader.result });
-            };
-            fileInput.value = ''; // Clear file input after reading
-        }
-    }
+// 정적 파일 제공을 위한 middleware 설정
+app.use(express.static("public"));
 
-    socket.on('chat message', function (data) {
-        const { nickname, message } = data;
-        const messagesDiv = document.getElementById('messages');
-        messagesDiv.innerHTML += `<div class="chat-message"><strong>${nickname}:</strong> ${message}</div>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
-    });
+// 소켓 연결 설정
+io.on("connection", (socket) => {
+console.log("새로운 사용자가 접속했습니다.");
 
-    socket.on('file', function (data) {
-        const { nickname, filename, filesize, filetype, data: fileUrl } = data;
-        const messagesDiv = document.getElementById('messages');
-        let fileContent = '';
+// 채팅 메시지 수신
+socket.on("chat message", (data) => {
+io.emit("chat message", data); // 모든 클라이언트에게 메시지 전송
+});
 
-        // 이미지 파일인 경우
-        if (filetype.startsWith('image/')) {
-            fileContent = `<img src="${fileUrl}" alt="${filename}">`;
-        }
-        // 동영상 파일인 경우
-        else if (filetype.startsWith('video/')) {
-            fileContent = `<video controls><source src="${fileUrl}" type="${filetype}"></video>`;
-        }
-        // 기타 파일인 경우 링크로 처리
-        else {
-            const downloadLink = `<a href="${fileUrl}" download="${filename}">${filename}</a>`;
-            fileContent = `전송한 파일 - ${downloadLink} (${filesize} bytes, ${filetype})`;
-        }
+// 파일 수신 및 전달
+socket.on("file", (data) => {
+io.emit("file", data); // 모든 클라이언트에게 파일 데이터 전송
+});
+});
 
-        messagesDiv.innerHTML += `<div class="chat-message"><strong>${nickname}:</strong> ${fileContent}</div>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom
-    });
-</script>
-</body>
-</html>
-
-
-<!--<!DOCTYPE html>-->
-<!--<html lang="en">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-<!--    <title>실시간 채팅 앱</title>-->
-<!--    <style>-->
-<!--        #messages {-->
-<!--            max-height: 300px;-->
-<!--            overflow-y: auto;-->
-<!--            border: 1px solid #ccc;-->
-<!--            padding: 10px;-->
-<!--        }-->
-<!--        .chat-message img, .chat-message video {-->
-<!--            max-width: 100%;-->
-<!--            max-height: 300px;-->
-<!--        }-->
-<!--    </style>-->
-<!--</head>-->
-<!--<body>-->
-<!--<div id="chatbox">-->
-<!--    <div id="messages"></div>-->
-<!--    <input type="text" id="nickname" placeholder="닉네임">-->
-<!--    <input type="text" id="message" placeholder="메시지 입력">-->
-<!--    <input type="file" id="fileInput">-->
-<!--    <button onclick="sendMessage()">전송</button>-->
-<!--    <button onclick="sendFile()">파일 전송</button>-->
-<!--</div>-->
-
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>-->
-<!--<script>-->
-<!--    const socket = io();-->
-
-<!--    function sendMessage() {-->
-<!--        const nickname = document.getElementById('nickname').value;-->
-<!--        const message = document.getElementById('message').value;-->
-<!--        if (nickname && message) {-->
-<!--            socket.emit('chat message', { nickname, message });-->
-<!--            document.getElementById('message').value = '';-->
-<!--        }-->
-<!--    }-->
-
-<!--    function sendFile() {-->
-<!--        const fileInput = document.getElementById('fileInput');-->
-<!--        const file = fileInput.files[0];-->
-<!--        if (file) {-->
-<!--            const reader = new FileReader();-->
-<!--            reader.readAsDataURL(file);-->
-<!--            reader.onload = function () {-->
-<!--                const nickname = document.getElementById('nickname').value;-->
-<!--                const filename = file.name;-->
-<!--                const filesize = file.size;-->
-<!--                const filetype = file.type;-->
-<!--                socket.emit('file', { nickname, filename, filesize, filetype, data: reader.result });-->
-<!--            };-->
-<!--            fileInput.value = ''; // Clear file input after reading-->
-<!--        }-->
-<!--    }-->
-
-<!--    socket.on('chat message', function (data) {-->
-<!--        const { nickname, message } = data;-->
-<!--        const messagesDiv = document.getElementById('messages');-->
-<!--        messagesDiv.innerHTML += `<p><strong>${nickname}:</strong> ${message}</p>`;-->
-<!--        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom-->
-<!--    });-->
-
-<!--    socket.on('file', function (data) {-->
-<!--        const { nickname, filename, filesize, filetype, data: fileUrl } = data;-->
-<!--        const messagesDiv = document.getElementById('messages');-->
-<!--        let fileElement = '';-->
-
-<!--        if (filetype.startsWith('image')) {-->
-<!--            fileElement = `<img src="${fileUrl}" alt="${filename}">`;-->
-<!--        } else if (filetype.startsWith('video')) {-->
-<!--            fileElement = `<video controls><source src="${fileUrl}" type="${filetype}"></video>`;-->
-<!--        } else {-->
-<!--            const downloadLink = `<a href="${fileUrl}" download="${filename}">${filename}</a>`;-->
-<!--            fileElement = `전송한 파일 - ${downloadLink} (${filesize} bytes, ${filetype})`;-->
-<!--        }-->
-
-<!--        messagesDiv.innerHTML += `<p><strong>${nickname}:</strong> ${fileElement}</p>`;-->
-<!--        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to bottom-->
-<!--    });-->
-<!--</script>-->
-<!--</body>-->
-<!--</html>-->
+// 서버 시작
+server.listen(PORT, () => {
+console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
+});
