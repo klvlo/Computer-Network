@@ -1,32 +1,340 @@
-const express = require("express");
-const http = require("http");
-const socketIo = require("socket.io");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>실시간 채팅 앱</title>
+    <style>
+        :root {
+            --border-color: #ccc;
+            --border-radius: 10px;
+            --background-color: #f9f9f9;
+            --padding: 10px;
+            --box-bg-color: #fff;
+            --box-border-color: #333;
+            --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            --chat-bg-color: #fff;
+            --chat-border-color: #999;
+            --chat-log-bg-color: #f2f2f2;
+            --button-bg-color: #4caf50;
+            --button-color: #fff;
+            --button-hover-bg-color: #45a049;
+        }
 
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--background-color);
+        }
 
-const PORT = process.env.PORT || 3000;
+        .Box {
+            width: 50%;
+            height: 80%;
+            border: 2px solid var(--box-border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--box-bg-color);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--padding);
+        }
 
-// 정적 파일 제공을 위한 middleware 설정
-app.use(express.static("public"));
+        @media screen and (max-width: 800px) {
+            .Box {
+                width: 70%;
+                height: 70%;
+            }
+        }
 
-// 소켓 연결 설정
-io.on("connection", (socket) => {
-console.log("새로운 사용자가 접속했습니다.");
+        @media screen and (max-width: 600px) {
+            .Box {
+                width: 90%;
+                height: 60%;
+            }
+        }
 
-// 채팅 메시지 수신
-socket.on("chat message", (data) => {
-io.emit("chat message", data); // 모든 클라이언트에게 메시지 전송
-});
+        @media screen and (max-width: 400px) {
+            .Box {
+                width: 100%;
+                height: 50%;
+            }
+        }
 
-// 파일 수신 및 전달
-socket.on("file", (data) => {
-io.emit("file", data); // 모든 클라이언트에게 파일 데이터 전송
-});
-});
+        .Header {
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
 
-// 서버 시작
-server.listen(PORT, () => {
-console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
-});
+        .ChatBox {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            height: 80%;
+            width: 95%;
+            display: flex;
+            flex-direction: column;
+            background-color: #f2fbef;
+            padding: var(--padding);
+            margin-bottom: 10px;
+            overflow-y: auto;
+        }
+
+        .Chat {
+            display: flex;
+            align-items: center;
+            border: 2px solid var(--chat-border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--chat-bg-color);
+            width: 95%;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        .ChatName {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .ChatLog {
+            flex-grow: 1;
+            background-color: var(--chat-log-bg-color);
+            border-radius: 5px;
+            padding: 10px;
+            margin-left: 10px;
+        }
+
+        .ChatImage {
+            max-width: 200px; /* 원하는 최대 너비 설정 */
+            max-height: 200px; /* 원하는 최대 높이 설정 */
+            height: auto;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+
+        .InputBox {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: var(--box-bg-color);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .InputTextWrapper {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .InputText {
+            width: 100%;
+            border-radius: 20px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            outline: none;
+            padding-right: 30px;
+        }
+
+        .ClipIcon {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        .InputName {
+            flex: 0 0 20%;
+            border-radius: 20px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            outline: none;
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: var(--button-bg-color);
+            color: var(--button-color);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: var(--button-hover-bg-color);
+        }
+
+        .FileName {
+            flex: 0 0 20%;
+            font-size: 0.9rem;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        /* 이미지 확대를 위한 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            padding-top: 60px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="Box">
+    <div class="Header">Computer Network 7조</div>
+    <div id="messages" class="ChatBox"></div>
+    <div class="InputBox">
+        <input
+                type="text"
+                id="nickname"
+                class="InputName"
+                placeholder="닉네임"
+        />
+        <div class="InputTextWrapper">
+            <input
+                    type="text"
+                    id="message"
+                    class="InputText"
+                    placeholder="메시지 입력"
+            />
+            <span
+                    class="ClipIcon"
+                    onclick="document.getElementById('fileInput').click()"
+            >📎</span
+            >
+            <input type="file" id="fileInput" style="display: none" />
+        </div>
+        <button onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<!-- The Modal -->
+
+<div id="myModal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="img01" />
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    function sendMessage() {
+        const nickname = document.getElementById("nickname").value;
+        const message = document.getElementById("message").value;
+        if (nickname && message) {
+            socket.emit("chat message", { nickname, message });
+            document.getElementById("message").value = "";
+        }
+    }
+
+    document
+        .getElementById("fileInput")
+        .addEventListener("change", function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function () {
+                    const nickname = document.getElementById("nickname").value;
+                    const filename = file.name;
+                    const filetype = file.type;
+                    socket.emit("file", {
+                        nickname,
+                        filename,
+                        filetype,
+                        data: reader.result,
+                    });
+                };
+            }
+        });
+
+    socket.on("chat message", function (data) {
+        const { nickname, message } = data;
+        const messagesDiv = document.getElementById("messages");
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("Chat");
+        messageElement.innerHTML = `<div class="ChatName"><strong>${nickname}:</strong></div> <div class="ChatLog">${message}</div>`;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    socket.on("file", function (data) {
+        const { nickname, filename, filetype, data: fileUrl } = data;
+        const messagesDiv = document.getElementById("messages");
+        const fileElement = document.createElement("div");
+        fileElement.classList.add("Chat");
+
+        let fileContent = "";
+        if (filetype.startsWith("image/")) {
+            fileContent = `<img src="${fileUrl}" alt="${filename}" class="ChatImage" onclick="openModal('${fileUrl}')">`;
+        } else if (filetype.startsWith("video/")) {
+            fileContent = `<video controls class="ChatImage"><source src="${fileUrl}" type="${filetype}"></video>`;
+        } else {
+            fileContent = `<a href="${fileUrl}" download="${filename}">${filename}</a>`;
+        }
+
+        fileElement.innerHTML = `<div class="ChatName"><strong>${nickname}:</strong></div> <div class="ChatLog">${fileContent}</div>`;
+        messagesDiv.appendChild(fileElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    function openModal(imageSrc) {
+        const modal = document.getElementById("myModal");
+        const modalImg = document.getElementById("img01");
+        modal.style.display = "block";
+        modalImg.src = imageSrc;
+    }
+
+    // Close the modal
+    const modal = document.getElementById("myModal");
+    const span = document.getElementsByClassName("close")[0];
+    span.onclick = function () {
+        modal.style.display = "none";
+    };
+</script>
+</body>
+</html>
